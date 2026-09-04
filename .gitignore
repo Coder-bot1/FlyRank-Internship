@@ -26,6 +26,11 @@ outputs/*.csv
 # --- Intern work area ------------------------------------------------------
 # your experiments live in work/; datasets never enter git
 work/**/*.csv
+scratch/
+flyrank-ml-internship-starter/
+*.csv
+!data/raw/content_refresh_anonymized.csv
+!outputs/refresh_queue_sample.csv
 
 # --- Python / notebooks ----------------------------------------------------
 __pycache__/
@@ -34,3 +39,4 @@ __pycache__/
 .venv/
 venv/
 .env
+

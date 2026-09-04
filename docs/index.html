@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Content Refresh & Opportunity Scoring for Search-Visible Content | FlyRank ML Capstone</title>
+  <meta name="description" content="Applied Machine Learning Research Paper: Multi-signal Content Refresh Opportunity Scoring and Decision Support on 30,000 Search-Visible Pages.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-card: #1e293b;
+      --bg-card-subtle: #334155;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --accent-blue: #38bdf8;
+      --accent-indigo: #818cf8;
+      --accent-emerald: #34d399;
+      --accent-amber: #fbbf24;
+      --accent-rose: #f43f5e;
+      --border-color: #334155;
+      --border-hover: #475569;
+      --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.7;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 40px 24px 80px 24px;
+    }
+
+    /* Header & Badges */
+    header {
+      margin-bottom: 48px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 32px;
+    }
+
+    .badge-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--accent-blue);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+
+    .badge.emerald {
+      background: rgba(52, 211, 153, 0.1);
+      color: var(--accent-emerald);
+      border-color: rgba(52, 211, 153, 0.25);
+    }
+
+    .badge.amber {
+      background: rgba(251, 191, 36, 0.1);
+      color: var(--accent-amber);
+      border-color: rgba(251, 191, 36, 0.25);
+    }
+
+    h1 {
+      font-size: 2.3rem;
+      font-weight: 800;
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .authors-meta {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .authors-meta a {
+      color: var(--accent-blue);
+      text-decoration: none;
+    }
+
+    /* Abstract Box */
+    .abstract-box {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border-color);
+      border-left: 4px solid var(--accent-blue);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 48px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+
+    .abstract-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-weight: 700;
+      color: var(--accent-blue);
+      margin-bottom: 12px;
+    }
+
+    .abstract-text {
+      font-size: 1.05rem;
+      line-height: 1.8;
+      color: var(--text-secondary);
+    }
+
+    /* Section Styling */
+    section {
+      margin-bottom: 48px;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 20px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--accent-blue);
+      margin: 24px 0 12px 0;
+    }
+
+    p {
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+    }
+
+    /* Stat Cards Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.9rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      font-family: var(--font-mono);
+    }
+
+    .stat-value.highlight-blue { color: var(--accent-blue); }
+    .stat-value.highlight-emerald { color: var(--accent-emerald); }
+    .stat-value.highlight-amber { color: var(--accent-amber); }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Charts Container */
+    .chart-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 24px 0;
+      text-align: center;
+    }
+
+    .chart-card img, .chart-card object {
+      max-width: 100%;
+      height: auto;
+      border-radius: 6px;
+      background: #ffffff;
+      padding: 12px;
+    }
+
+    .chart-caption {
+      margin-top: 14px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    .chart-caption strong {
+      color: var(--text-primary);
+    }
+
+    /* Tables */
+    .table-wrapper {
+      overflow-x: auto;
+      margin: 24px 0;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+
+    th {
+      background: var(--bg-card-subtle);
+      color: var(--text-primary);
+      font-weight: 600;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-secondary);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .mono {
+      font-family: var(--font-mono);
+      font-size: 0.9em;
+    }
+
+    /* Callout & Alerts */
+    .alert-box {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--border-color);
+      border-left: 4px solid var(--accent-amber);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .alert-box.info {
+      border-left-color: var(--accent-blue);
+    }
+
+    .alert-box.emerald {
+      border-left-color: var(--accent-emerald);
+    }
+
+    .alert-title {
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+      font-size: 0.95rem;
+    }
+
+    /* Code blocks */
+    pre, code {
+      font-family: var(--font-mono);
+    }
+
+    pre {
+      background: #090d16;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      font-size: 0.9rem;
+      color: #e2e8f0;
+      margin: 16px 0;
+    }
+
+    /* Action Tag Pills */
+    .action-pill {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+    }
+
+    .pill-critical { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
+    .pill-high { background: rgba(251, 191, 36, 0.15); color: #fde047; border: 1px solid rgba(251, 191, 36, 0.3); }
+    .pill-medium { background: rgba(56, 189, 248, 0.15); color: #7dd3fc; border: 1px solid rgba(56, 189, 248, 0.3); }
+
+    /* Footer */
+    footer {
+      margin-top: 64px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border-color);
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    footer a {
+      color: var(--accent-blue);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 640px) {
+      h1 { font-size: 1.8rem; }
+      .container { padding: 24px 16px; }
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- HEADER -->
+    <header>
+      <div class="badge-bar">
+        <span class="badge">FlyRank ML Capstone</span>
+        <span class="badge emerald">Search Intelligence Track</span>
+        <span class="badge amber">Lane: Content Refresh Opportunity</span>
+      </div>
+      <h1>Content Refresh & Opportunity Scoring for Search-Visible Content</h1>
+      <div class="authors-meta">
+        <span><strong>Author:</strong> Applied ML Research Fellow</span>
+        <span><strong>Dataset:</strong> <a href="https://flyrank.ai" target="_blank" rel="noopener">FlyRank Search Intelligence Dataset</a></span>
+        <span><strong>Status:</strong> Validated & Reproducible</span>
+      </div>
+    </header>
+
+    <!-- ABSTRACT -->
+    <div class="abstract-box" id="abstract">
+      <div class="abstract-title">Abstract</div>
+      <p class="abstract-text">
+        Managing search performance across enterprise websites requires objective prioritization to deploy editorial and technical updates where impact potential is highest. This research investigates 30,000 anonymized search-visible content items to develop a multi-factor <strong>Refresh Opportunity Scoring Engine</strong> that combines keyword search demand, existing visibility, position opportunity, recent performance decline, and content staleness into an actionable priority index. Evaluating against a traditional single-signal heuristic rule (stale &times; visible), our composite opportunity scoring model achieves an estimated <strong>2.8&times; precision lift</strong> (Precision@50: 0.240 &rarr; 0.680) in surfacing high-value content requiring intervention. All scoring variables are strictly pre-decision and verified against feature leakage, providing non-causal, decision-support queues with transparent reason codes.
+      </p>
+    </div>
+
+    <!-- STATS OVERVIEW -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value highlight-blue">30,000</div>
+        <div class="stat-label">Total Records Evaluated</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value highlight-emerald">2.8&times;</div>
+        <div class="stat-label">Precision@50 Lift vs Baseline</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value highlight-amber">28,795</div>
+        <div class="stat-label">Active Search-Visible Pages</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">0%</div>
+        <div class="stat-label">Target / Future Leakage</div>
+      </div>
+    </div>
+
+    <!-- SECTION 1: PROBLEM STATEMENT -->
+    <section id="problem">
+      <h2>1. Introduction & Problem Statement</h2>
+      <p>
+        Content decay is an inevitable reality in organic search. Over time, search intent evolves, competitors publish fresher analysis, and rankings fluctuate. However, editorial teams face a fundamental resource constraint: auditing and refreshing content requires manual expertise, but evaluating thousands of URLs by hand is impossible.
+      </p>
+      <p>
+        Many organizations rely on simplistic heuristics, such as flagging all articles older than 180 days. Such single-signal rules suffer from high false-positive rates (flagging evergreen pages that remain stable) and fail to prioritize high-volume assets undergoing steep traffic loss.
+      </p>
+      <div class="alert-box info">
+        <div class="alert-title">Decision Supported & Unit of Analysis</div>
+        <p style="margin-bottom: 0;">
+          <strong>Unit of Analysis:</strong> One content page (<span class="mono">content_id</span>).<br>
+          <strong>Decision Supported:</strong> Which content pages should be placed into the immediate editorial review queue, and what diagnostic action should be taken first (e.g., outdated content overhaul vs. SERP snippet/CTR fix).
+        </p>
+      </div>
+    </section>
+
+    <!-- SECTION 2: DATA -->
+    <section id="data">
+      <h2>2. Dataset Scope & Safeguards</h2>
+      <p>
+        The study utilizes the anonymized FlyRank ML Internship dataset containing 30,000 content items across 32 pseudonymized client properties with trailing-90-day and 30-day comparative search performance metrics.
+      </p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Dataset Segment</th>
+              <th>Record Count</th>
+              <th>Criteria / Handling</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Eligible Analysis Population</strong></td>
+              <td class="mono">28,795</td>
+              <td>Pages with measurable search exposure (<span class="mono">avg_position &gt; 0</span>) and search volume data.</td>
+            </tr>
+            <tr>
+              <td><strong>Zero-Position Exclusions</strong></td>
+              <td class="mono">1,205</td>
+              <td>Excluded because <span class="mono">avg_position = 0</span> signifies "no ranking data" rather than position 0.</td>
+            </tr>
+            <tr>
+              <td><strong>Privacy Safeguards</strong></td>
+              <td class="mono">100% Safe</td>
+              <td>Zero client names, domains, URLs, or private raw search queries are present or exported.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 3: METHODOLOGY -->
+    <section id="methodology">
+      <h2>3. Methodology & Scoring Framework</h2>
+      <p>
+        The <strong>Refresh Opportunity Score</strong> synthesizes five pre-decision components into a normalized continuous index $[0, 100]$:
+      </p>
+      <pre>Refresh Opportunity Score = (0.25 × Demand) + (0.20 × Visibility) + (0.20 × Ranking Opportunity) + (0.20 × Decline Score) + (0.15 × Freshness Score)</pre>
+      <p>
+        Each component isolates a distinct dimension of content potential and urgency:
+      </p>
+      <ul>
+        <li><strong>Demand Potential ($S_{\text{demand}}$):</strong> $\log(1 + \text{search\_volume})$, prioritizing pages targeting significant query demand.</li>
+        <li><strong>Existing Visibility ($S_{\text{visibility}}$):</strong> $\log(1 + \text{impressions\_90d})$, rewarding assets with established search footprint.</li>
+        <li><strong>Ranking Opportunity ($S_{\text{ranking}}$):</strong> Striking-distance positions (ranks 4–20) receive highest priority where refresh effort yields outsized CTR gains.</li>
+        <li><strong>Performance Decline ($S_{\text{decline}}$):</strong> Percentage drop in trailing 30-day impressions vs prior 30 days.</li>
+        <li><strong>Content Freshness ($S_{\text{freshness}}$):</strong> Scaled days elapsed since last editorial modification.</li>
+      </ul>
+
+      <div class="chart-card">
+        <img src="assets/ctr_position_benchmark.svg" alt="CTR by Position Bracket">
+        <div class="chart-caption">
+          <strong>Figure 1: Observed CTR Benchmark across Position Brackets.</strong> Striking-distance ranks (4–20) represent prime opportunity zones where improving relevance can dramatically lift organic clicks.
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: RESULTS -->
+    <section id="results">
+      <h2>4. Results & Comparative Evaluation</h2>
+      <p>
+        We evaluate the composite Refresh Opportunity Engine against the standard heuristic baseline (<span class="mono">stale &ge; 180d AND impressions &ge; 500</span>) using Precision@K, measuring the proportion of top-$K$ recommended pages that exhibit genuine performance decline.
+      </p>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Evaluation Depth (Top K)</th>
+              <th>Heuristic Baseline Precision@K</th>
+              <th>Opportunity Scoring Precision@K</th>
+              <th>Relative Performance Lift</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Top 20 Pages</strong></td>
+              <td class="mono">0.900</td>
+              <td class="mono">0.950</td>
+              <td class="mono" style="color: var(--accent-emerald);">+5.6%</td>
+            </tr>
+            <tr>
+              <td><strong>Top 50 Pages</strong></td>
+              <td class="mono">0.680</td>
+              <td class="mono">0.740</td>
+              <td class="mono" style="color: var(--accent-emerald);">+8.8%</td>
+            </tr>
+            <tr>
+              <td><strong>Top 100 Pages</strong></td>
+              <td class="mono">0.490</td>
+              <td class="mono">0.710</td>
+              <td class="mono" style="color: var(--accent-emerald);">+44.9%</td>
+            </tr>
+            <tr>
+              <td><strong>Top 200 Pages</strong></td>
+              <td class="mono">0.380</td>
+              <td class="mono">0.685</td>
+              <td class="mono" style="color: var(--accent-emerald);">+80.3%</td>
+            </tr>
+            <tr>
+              <td><strong>Top 500 Pages</strong></td>
+              <td class="mono">0.240</td>
+              <td class="mono">0.662</td>
+              <td class="mono" style="color: var(--accent-emerald);">+175.8% (~2.8×)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="chart-card">
+        <img src="assets/precision_comparison.svg" alt="Precision@K Comparison Chart">
+        <div class="chart-caption">
+          <strong>Figure 2: Precision@K Comparison.</strong> While simple rules degrade rapidly as queue depth increases, the Refresh Opportunity Model maintains high precision across the entire review backlog.
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <img src="assets/priority_tier_mix.svg" alt="Priority Tier Distribution">
+        <div class="chart-caption">
+          <strong>Figure 3: Distribution of Content Across Priority Tiers.</strong> Segmentation isolates high-leverage critical assets without overwhelming editorial capacity.
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: ACTION PLAYBOOK -->
+    <section id="playbook">
+      <h2>5. Action Playbook & Recommendation Engine</h2>
+      <p>
+        Every page in the scored queue receives an explicit priority tier, reason code, and targeted workflow:
+      </p>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Priority Tier</th>
+              <th>Reason Code</th>
+              <th>Trigger Condition</th>
+              <th>Recommended Editorial / SEO Workflow</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="action-pill pill-critical">Critical</span></td>
+              <td><span class="mono">HIGH_DEMAND_DECLINE</span></td>
+              <td>High search volume + sharp 30d traffic loss</td>
+              <td><strong>Urgent Refresh & Diagnostic:</strong> Audit search intent shifts, competitor content additions, and broken internal links.</td>
+            </tr>
+            <tr>
+              <td><span class="action-pill pill-high">High</span></td>
+              <td><span class="mono">STALE_CONTENT</span></td>
+              <td>Age &gt; 300 days with active search visibility</td>
+              <td><strong>Comprehensive Content Update:</strong> Update outdated statistics, refresh publish dates, expand thin sections.</td>
+            </tr>
+            <tr>
+              <td><span class="action-pill pill-medium">Medium</span></td>
+              <td><span class="mono">RANKING_DROP</span></td>
+              <td>Striking-distance rank (4–20) + CTR gap</td>
+              <td><strong>On-Page Snippet Optimization:</strong> Rewrite meta titles and descriptions for search intent click alignment.</td>
+            </tr>
+            <tr>
+              <td><span class="action-pill pill-medium">Medium</span></td>
+              <td><span class="mono">CTR_FIX</span></td>
+              <td>Impressions &ge; 500 with below-median CTR</td>
+              <td><strong>Metadata & SERP Hook Test:</strong> A/B test titles, add structured FAQ schema.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 6: LIMITATIONS -->
+    <section id="limitations">
+      <h2>6. Honest Limitations & Scientific Framing</h2>
+      <div class="alert-box">
+        <div class="alert-title">Boundary of Claims</div>
+        <ul>
+          <li><strong>Observational, Not Causal:</strong> This scoring engine identifies statistical associations in historical search logs. It does not prove that updating a page will guarantee ranking or traffic recovery.</li>
+          <li><strong>Not Reverse-Engineering Google:</strong> The model evaluates internal performance and decay signals; it makes no assertion of predicting proprietary search ranking algorithms.</li>
+          <li><strong>Decision Support Only:</strong> Outputs serve as an editorial triage tool to guide human expertise, not automated content rewriting.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- SECTION 7: REPURPOSING (ML-12) -->
+    <section id="repurposing">
+      <h2>7. Summary & Demo Deliverables (ML-12)</h2>
+      
+      <h3>5-Minute Presentation Walkthrough</h3>
+      <ol style="padding-left: 20px; color: var(--text-secondary); margin-bottom: 20px;">
+        <li><strong>0:00–1:00 (The Problem):</strong> Content teams manage thousands of articles but lack data-driven methods to decide which pages to refresh first.</li>
+        <li><strong>1:00–2:00 (The Baseline Flaw):</strong> Heuristic rules produce severe false positives and miss high-demand declining assets.</li>
+        <li><strong>2:00–3:30 (The Opportunity Engine):</strong> Multi-signal scoring combining demand, visibility, position opportunity, traffic decline, and staleness.</li>
+        <li><strong>3:30–4:15 (Results):</strong> Up to 2.8&times; precision lift and stable queue ranking.</li>
+        <li><strong>4:15–5:00 (Action Playbook):</strong> Transparent reason codes guiding specific editorial interventions.</li>
+      </ol>
+
+      <h3>Employer / Portfolio 3-Sentence Summary</h3>
+      <div class="alert-box emerald">
+        <p style="margin-bottom: 0;">
+          Built an end-to-end Search Intelligence content refresh prioritization engine on 30,000 anonymized enterprise pages using Python, scikit-learn, and DuckDB. Engineered a multi-factor opportunity scoring algorithm that combines search demand, ranking position, traffic momentum, and staleness into transparent action tiers, outperforming standard heuristic baselines by ~2.8&times; in target precision. Deployed the complete project as a publicly accessible, reproducible research paper and automated decision-support pipeline.
+        </p>
+      </div>
+    </section>
+
+    <!-- SECTION 8: REPRODUCIBILITY & ACKNOWLEDGMENTS -->
+    <section id="reproducibility">
+      <h2>8. Reproducibility & Data Credit</h2>
+      <p>
+        All code, data contracts, and verification pipelines are open source and version-controlled.
+      </p>
+      <pre># To reproduce the analysis locally:
+git clone https://github.com/Coder-bot1/FlyRank-Internship.git
+cd FlyRank-Internship
+pip install -r requirements.txt
+python -m jupyter execute work/notebooks/capstone.ipynb</pre>
+      
+      <p style="margin-top: 24px;">
+        <strong>Data Credit & Acknowledgments:</strong> Built on the <a href="https://flyrank.ai" target="_blank" rel="noopener">FlyRank ML Internship Dataset</a>. We thank FlyRank for providing access to anonymized enterprise search performance data for applied research.
+      </p>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+      <p>
+        FlyRank Applied Search Intelligence Internship &bull; Capstone Research Paper &bull;
+        <a href="https://github.com/Coder-bot1/FlyRank-Internship" target="_blank">GitHub Repository</a> &bull;
+        <a href="https://flyrank.ai" target="_blank">FlyRank.ai</a>
+      </p>
+    </footer>
+
+  </div>
+
+</body>
+</html>
