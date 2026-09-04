@@ -5,3 +5,6 @@ I prove that I can build end-to-end, leak-free machine learning prioritization p
 
 ## 2. The One-Line Why
 A resume or LinkedIn profile lists static keywords like "Python, Machine Learning, and DuckDB", but this live deployed research paper and reproducible repository prove I can navigate real-world data constraints, execute grouped validation splits, and defend non-causal decision recommendations under strict peer review.
+
+##Repository Proof Link:
+https://github.com/Coder-bot1/FlyRank-Internship
