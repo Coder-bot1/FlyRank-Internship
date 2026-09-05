@@ -33,7 +33,7 @@ Applied Machine Learning engineer specializing in Search Intelligence and decisi
 
 ## 4. Contact & Call-to-Action (CTA) Copy
 Looking for an engineer who frames business problems rigorously, writes clean code, and validates without shortcuts?  
-**[Send me an email to schedule a 15-minute technical intro call](mailto:smuqashif@gmail.com)** or inspect the full codebase on **[GitHub](https://github.com/Coder-bot1/FlyRank-Internship)**.
+**[Send me an email to schedule a 15-minute technical intro call](smuqashif@gmail.com)** or inspect the full codebase on **[GitHub](https://github.com/Coder-bot1/FlyRank-Internship)**.
 
 ---
 
